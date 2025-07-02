@@ -1,0 +1,37 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id>com.xdmrwu.recompose.spy</id>
+    <name>RecomposeSpy</name>
+    <vendor>XDMrWu</vendor>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.android</depends>
+
+<!--    <extensions defaultExtensionNs="com.intellij">-->
+<!--        <toolWindow factoryClass="com.xdmrwu.recompose.spy.plugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>-->
+<!--        <postStartupActivity implementation="org.jetbrains.plugins.template.startup.MyProjectActivity" />-->
+<!--    </extensions>-->
+
+
+    <actions>
+        <group
+            id="RecomposeSpy.JumpIRActionGroup"
+            class="com.xdmrwu.recompose.spy.plugin.action.JumpIRActionGroup"
+            text="Jump to IR Code"
+            description="Jump to IR code in RecomposeSpy plugin"
+            popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+<!--            <action-->
+<!--                id="RecomposeSpy.JumpRawIRAction"-->
+<!--                class="com.xdmrwu.recompose.spy.plugin.action.JumpRawIRAction"-->
+<!--                text="Raw IR">-->
+<!--            </action>-->
+
+<!--            <action-->
+<!--                id="RecomposeSpy.JumpComposeStyleIRAction"-->
+<!--                class="com.xdmrwu.recompose.spy.plugin.action.JumpComposeStyleIRAction"-->
+<!--                text="Compose Style IR">-->
+<!--            </action>-->
+        </group>
+    </actions>
+</idea-plugin>
