@@ -1,6 +1,7 @@
 package com.xdmrwu.recompose.spy.plugin.toolWindow
 
 import com.android.ddmlib.IDevice
+import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTabbedPane
@@ -14,7 +15,7 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
 
-class RecomposeSpyToolWindowContent(private val service: AdbConnectionService) {
+class RecomposeSpyToolWindowContent(private val service: AdbConnectionService, project: Project) {
     private val contentPanel: JPanel = JPanel(BorderLayout())
     private val tabbedPane = JBTabbedPane(SwingConstants.TOP)
     private val deviceComponents = mutableMapOf<String, RecomposeSpyContent>()
@@ -38,7 +39,7 @@ class RecomposeSpyToolWindowContent(private val service: AdbConnectionService) {
             override fun onDeviceConnected(device: IDevice) {
                 SwingUtilities.invokeLater {
                     if (!deviceComponents.containsKey(device.serialNumber)) {
-                        val content = RecomposeSpyContent()
+                        val content = RecomposeSpyContent(project)
                         deviceComponents[device.serialNumber] = content
                         val tabTitle = ellipsizeTabTitle(device)
                         tabbedPane.addTab(tabTitle, content.getContent())

@@ -12,7 +12,7 @@ class RecomposeSpyToolWindow : ToolWindowFactory {
         // 获取插件服务实例
         val service = project.getService(AdbConnectionService::class.java)
 
-        val recomposeSpyToolWindowContent = RecomposeSpyToolWindowContent(service)
+        val recomposeSpyToolWindowContent = RecomposeSpyToolWindowContent(service, project)
         val content = ContentFactory.getInstance().createContent(recomposeSpyToolWindowContent.getContentPanel(), "", false)
         toolWindow.contentManager.addContent(content)
     }
