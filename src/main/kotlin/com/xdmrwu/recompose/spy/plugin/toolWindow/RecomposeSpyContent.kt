@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
 import kotlinx.serialization.json.Json
 import java.awt.Component
+import java.awt.Font
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import com.intellij.ui.treeStructure.Tree
@@ -37,6 +38,7 @@ class RecomposeSpyContent(val project: Project) {
     private val tree = Tree(treeModel).apply {
         isRootVisible = true
         showsRootHandles = true
+        font = Font("JetBrains Mono", Font.PLAIN, 16)
     }
 
     private val detailPanel = TraceNodeDetailPanel(project)
@@ -51,7 +53,9 @@ class RecomposeSpyContent(val project: Project) {
         (ui as? BasicSplitPaneUI)?.divider?.background = Color.GRAY
     }
 
-    private val emptyPanel = JLabel("No Recompose Data", JLabel.CENTER)
+    private val emptyPanel = JLabel("No Recompose Data", JLabel.CENTER).apply {
+        font = Font("JetBrains Mono", Font.BOLD, 16)
+    }
 
     private val component by lazy {
         JPanel(BorderLayout()).apply {

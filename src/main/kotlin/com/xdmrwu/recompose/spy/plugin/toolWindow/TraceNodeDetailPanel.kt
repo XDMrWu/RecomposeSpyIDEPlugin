@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
 import java.awt.BorderLayout
+import java.awt.Font
 import javax.swing.JPanel
 import javax.swing.JTextArea
 
@@ -18,6 +19,7 @@ class TraceNodeDetailPanel(
 
     // 右侧属性面板
     private val detailArea = JTextArea().apply {
+        font = Font("JetBrains Mono", Font.PLAIN, 13)
         isEditable = false
         wrapStyleWord = true
     }

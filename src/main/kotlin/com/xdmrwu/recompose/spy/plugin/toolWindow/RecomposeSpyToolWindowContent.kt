@@ -9,6 +9,7 @@ import com.xdmrwu.recompose.spy.plugin.services.AdbConnectionService
 import com.xdmrwu.recompose.spy.plugin.services.DeviceManager
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Font
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -17,9 +18,13 @@ import javax.swing.SwingUtilities
 
 class RecomposeSpyToolWindowContent(private val service: AdbConnectionService, project: Project) {
     private val contentPanel: JPanel = JPanel(BorderLayout())
-    private val tabbedPane = JBTabbedPane(SwingConstants.TOP)
+    private val tabbedPane = JBTabbedPane(SwingConstants.TOP).apply {
+        font = Font("JetBrains Mono", Font.PLAIN, 13)
+    }
     private val deviceComponents = mutableMapOf<String, RecomposeSpyContent>()
-    private val emptyLabel = JLabel("No device connected", JLabel.CENTER)
+    private val emptyLabel = JLabel("No device connected", JLabel.CENTER).apply {
+        font = Font("JetBrains Mono", Font.BOLD, 16)
+    }
 
     companion object {
         // 缩略 tab 名称，超出 maxLen 时用省略号
