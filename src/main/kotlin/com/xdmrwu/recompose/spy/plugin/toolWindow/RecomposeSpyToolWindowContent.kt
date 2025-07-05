@@ -22,8 +22,34 @@ class RecomposeSpyToolWindowContent(private val service: AdbConnectionService, p
         font = Font("JetBrains Mono", Font.PLAIN, 13)
     }
     private val deviceComponents = mutableMapOf<String, RecomposeSpyContent>()
-    private val emptyLabel = JLabel("No device connected", JLabel.CENTER).apply {
-        font = Font("JetBrains Mono", Font.BOLD, 16)
+    private val emptyPanel = JPanel(BorderLayout()).apply {
+        val centerPanel = JPanel()
+        centerPanel.layout = javax.swing.BoxLayout(centerPanel, javax.swing.BoxLayout.Y_AXIS)
+        centerPanel.alignmentX = Component.CENTER_ALIGNMENT
+        centerPanel.alignmentY = Component.CENTER_ALIGNMENT
+
+        // 垂直居中
+        centerPanel.add(javax.swing.Box.createVerticalGlue())
+
+        val label = JLabel("No device connected", JLabel.CENTER).apply {
+            font = Font("JetBrains Mono", Font.BOLD, 16)
+            alignmentX = Component.CENTER_ALIGNMENT
+        }
+        val retryButton = JButton("重试连接").apply {
+            font = Font("JetBrains Mono", Font.PLAIN, 13)
+            alignmentX = Component.CENTER_ALIGNMENT
+            addActionListener {
+                service.connectToAdb()
+            }
+        }
+        centerPanel.add(label)
+        centerPanel.add(javax.swing.Box.createVerticalStrut(16))
+        centerPanel.add(retryButton)
+
+        // 垂直居中
+        centerPanel.add(javax.swing.Box.createVerticalGlue())
+
+        add(centerPanel, BorderLayout.CENTER)
     }
 
     companion object {
@@ -39,7 +65,7 @@ class RecomposeSpyToolWindowContent(private val service: AdbConnectionService, p
     }
 
     init {
-        contentPanel.add(emptyLabel, BorderLayout.CENTER)
+        contentPanel.add(emptyPanel, BorderLayout.CENTER)
         service.addDeviceInfoListener(object : DeviceManager.IDeviceInfoListener {
             override fun onDeviceConnected(device: IDevice) {
                 SwingUtilities.invokeLater {
@@ -50,8 +76,8 @@ class RecomposeSpyToolWindowContent(private val service: AdbConnectionService, p
                         tabbedPane.addTab(tabTitle, content.getContent())
                     }
                     // 切换到 tabbedPane 展示
-                    if (contentPanel.getComponent(0) == emptyLabel) {
-                        contentPanel.remove(emptyLabel)
+                    if (contentPanel.getComponent(0) == emptyPanel) {
+                        contentPanel.remove(emptyPanel)
                         contentPanel.add(tabbedPane, BorderLayout.CENTER)
                         contentPanel.revalidate()
                         contentPanel.repaint()
@@ -67,10 +93,10 @@ class RecomposeSpyToolWindowContent(private val service: AdbConnectionService, p
                     if (idx != -1) {
                         tabbedPane.removeTabAt(idx)
                     }
-                    // 如果没有 device，显示 emptyLabel
+                    // 如果没有 device，显示 emptyPanel
                     if (deviceComponents.isEmpty()) {
                         contentPanel.remove(tabbedPane)
-                        contentPanel.add(emptyLabel, BorderLayout.CENTER)
+                        contentPanel.add(emptyPanel, BorderLayout.CENTER)
                         contentPanel.revalidate()
                         contentPanel.repaint()
                     }

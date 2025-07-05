@@ -8,6 +8,7 @@ class RecomposeSpyTrackNode(
     val file: String,
     val startLine: Int,
     val endLine: Int,
+    val isLambda: Boolean = false,
     val inline: Boolean = false,
     val hasReturnType: Boolean = false, // 有返回值的Composable 不会是 restartable，也不会 skip
     val nonSkippable: Boolean = false,

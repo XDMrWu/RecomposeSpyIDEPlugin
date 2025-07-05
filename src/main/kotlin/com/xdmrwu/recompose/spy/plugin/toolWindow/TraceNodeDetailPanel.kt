@@ -45,6 +45,7 @@ class TraceNodeDetailPanel(
         sb.append("fqName: ${node.fqName}\n")
         sb.append("file: ${node.file}\n")
         sb.append("line: ${node.startLine} - ${node.endLine}\n")
+        sb.append("isLambda: ${node.isLambda}\n")
         sb.append("inline: ${node.inline}\n")
         sb.append("hasReturnType: ${node.hasReturnType}\n")
         sb.append("nonSkippable: ${node.nonSkippable}\n")
