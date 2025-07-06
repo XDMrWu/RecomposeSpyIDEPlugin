@@ -6,12 +6,17 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.android</depends>
+    <depends>org.jetbrains.kotlin</depends> <!-- 依赖 Kotlin 插件 -->
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow
             factoryClass="com.xdmrwu.recompose.spy.plugin.toolWindow.RecomposeSpyToolWindow" id="RecomposeSpyToolWindow"
             icon="/icons/icon.svg"
         />
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true" />
     </extensions>
 
 
