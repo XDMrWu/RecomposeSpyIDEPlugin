@@ -19,10 +19,13 @@ class RecomposeSpyTrackNode(
     var recomposeState: RecomposeState
 ) {
     fun getDisplayName(): String {
-        return if (fqName.isNotBlank()) {
-            "$file.${fqName.last()}[$startLine:$endLine]"
+        // 只保留一个匿名标识
+        val hasAnonymous = fqName.contains("<anonymous>")
+        val functionName = fqName.replace(".<anonymous>", "").split(".").last()
+        return if (hasAnonymous) {
+            "$functionName.<anonymous>[$startLine:$endLine]"
         } else {
-            "$file[$startLine:$endLine]"
+            "$functionName[$startLine:$endLine]"
         }
     }
 }

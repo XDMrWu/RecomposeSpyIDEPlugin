@@ -1,10 +1,11 @@
-package com.xdmrwu.recompose.spy.plugin.toolWindow
+package com.xdmrwu.recompose.spy.plugin.toolWindow.ui
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.xdmrwu.recompose.spy.plugin.analyze.RecomposeAnalyzer
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
 import java.awt.BorderLayout
+import java.awt.Container
 import java.awt.Font
 import javax.swing.JPanel
 import javax.swing.JTextArea
