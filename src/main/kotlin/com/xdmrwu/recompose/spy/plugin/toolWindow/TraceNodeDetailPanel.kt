@@ -2,6 +2,7 @@ package com.xdmrwu.recompose.spy.plugin.toolWindow
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
+import com.xdmrwu.recompose.spy.plugin.analyze.RecomposeAnalyzer
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
 import java.awt.BorderLayout
 import java.awt.Font
@@ -19,7 +20,7 @@ class TraceNodeDetailPanel(
 
     // 右侧属性面板
     private val detailArea = JTextArea().apply {
-        font = Font("JetBrains Mono", Font.PLAIN, 13)
+        font = Font("JetBrains Mono", Font.PLAIN, 18)
         isEditable = false
         wrapStyleWord = true
     }
@@ -36,7 +37,7 @@ class TraceNodeDetailPanel(
     fun updateNode(rootNode: RecomposeSpyTrackNode, selectedNode: RecomposeSpyTrackNode) {
         this.rootNode = rootNode
         this.selectedNode = selectedNode
-        detailArea.text = buildDetailText(selectedNode)
+        detailArea.text = RecomposeAnalyzer.analyzeRecomposeReason(rootNode, selectedNode)
     }
 
     // 构建详细属性文本
