@@ -33,10 +33,9 @@ class RecomposeSpyContent(val project: Project) {
     }
     private val detailPanel = TraceNodeDetailPanel(project)
 
-    // 主面板：左右分栏
-    private val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
-        leftComponent = recomposeTreePanel
-        rightComponent = detailPanel
+    private val splitPane = JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
+        topComponent = recomposeTreePanel
+        bottomComponent = detailPanel
         dividerLocation = 300
         resizeWeight = 0.3
         dividerSize = 2

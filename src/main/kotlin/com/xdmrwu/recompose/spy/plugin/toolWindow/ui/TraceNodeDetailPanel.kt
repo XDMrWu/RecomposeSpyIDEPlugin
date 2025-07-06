@@ -23,6 +23,7 @@ class TraceNodeDetailPanel(
     private val detailArea = JTextArea().apply {
         font = Font("JetBrains Mono", Font.PLAIN, 18)
         isEditable = false
+        lineWrap = true
         wrapStyleWord = true
     }
 
