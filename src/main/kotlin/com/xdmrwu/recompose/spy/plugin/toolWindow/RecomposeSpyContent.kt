@@ -11,16 +11,18 @@ import java.awt.Font
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import com.intellij.ui.treeStructure.Tree
+import com.xdmrwu.recompose.spy.plugin.toolWindow.ui.TopRecordPanel
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JSplitPane
 import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
 import javax.swing.plaf.basic.BasicSplitPaneUI
+import javax.swing.JLabel
+import javax.swing.SwingConstants
 
 /**
  * @Author: wulinpeng
@@ -30,7 +32,8 @@ import javax.swing.plaf.basic.BasicSplitPaneUI
 class RecomposeSpyContent(val project: Project) {
 
     private val json = Json { ignoreUnknownKeys = true }
-    private var model: RecomposeSpyTrackNode? = null
+    // 支持多个 model
+    private val models = mutableListOf<RecomposeSpyTrackNode>()
 
     private val rootNode = DefaultMutableTreeNode("Recompose Tree")
     private val treeModel = DefaultTreeModel(rootNode)
@@ -53,21 +56,35 @@ class RecomposeSpyContent(val project: Project) {
         (ui as? BasicSplitPaneUI)?.divider?.background = Color.GRAY
     }
 
-    private val emptyPanel = JLabel("No Recompose Data", JLabel.CENTER).apply {
-        font = Font("JetBrains Mono", Font.BOLD, 16)
+    // 顶部监听按钮
+    private val topRecordPanel = TopRecordPanel { isRecording ->
+        if (isRecording) {
+            models.clear()
+            updateTree()
+        }
+        updateStatePanel()
     }
 
-    private val component by lazy {
-        JPanel(BorderLayout()).apply {
-            add(emptyPanel, BorderLayout.CENTER)
+    // 监听中面板
+    private val listeningPanel = JPanel().apply {
+        layout = BorderLayout()
+        val label = JLabel("监听中", SwingConstants.CENTER).apply {
+            font = Font("JetBrains Mono", Font.BOLD, 16)
+            horizontalAlignment = SwingConstants.CENTER
+            verticalAlignment = SwingConstants.CENTER
         }
+        add(label, BorderLayout.CENTER)
     }
+
+    // 主内容面板
+    private val component = JPanel(BorderLayout())
 
     init {
+        updateStatePanel()
         tree.addTreeSelectionListener(TreeSelectionListener { e: TreeSelectionEvent? ->
-            val selectedNode = tree.lastSelectedPathComponent as? DefaultMutableTreeNode
-            val node = selectedNode?.getTrackNode()
-            detailPanel.updateNode(model!!, node!!)
+            val selectedNode = tree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return@TreeSelectionListener
+            val node = selectedNode?.getTrackNode()!!
+            detailPanel.updateNode(node.getRootNode(), node)
         })
         tree.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -87,6 +104,20 @@ class RecomposeSpyContent(val project: Project) {
         tree.setToggleClickCount(0) // 禁止通过双击展开/收起
     }
 
+    private fun updateStatePanel() {
+        component.removeAll()
+        component.add(topRecordPanel, BorderLayout.NORTH)
+
+        when {
+            models.isNotEmpty() -> component.add(splitPane, BorderLayout.CENTER)
+            topRecordPanel.isRecording && models.isEmpty() -> component.add(listeningPanel, BorderLayout.CENTER)
+        }
+
+        component.revalidate()
+        component.repaint()
+        topRecordPanel.repaint()
+    }
+
     fun getContent(): Component {
         return component
     }
@@ -96,18 +127,27 @@ class RecomposeSpyContent(val project: Project) {
         updateModel(model)
     }
 
+    // 支持多个 model 展示
     private fun updateModel(model: RecomposeSpyTrackNode) {
-        if (component.getComponent(0) != splitPane) {
-            component.removeAll()
-            component.add(splitPane, BorderLayout.CENTER)
+        if (!topRecordPanel.isRecording) {
+            return
         }
-        this.model = model
+        models.add(model)
+        updateTree()
+        updateStatePanel()
+    }
+
+    private fun updateTree() {
         rootNode.removeAllChildren()
-        rootNode.add(buildTreeNode(model))
+        for (m in models) {
+            rootNode.add(buildTreeNode(m))
+        }
         treeModel.reload(rootNode)
         expandAllNodes()
-        // 默认选中根节点并显示属性
-        tree.addSelectionRow(1)
+        // 默认选中第一个节点并显示属性
+        if (rootNode.childCount > 0) {
+            tree.setSelectionRow(1)
+        }
     }
 
     private fun buildTreeNode(node: RecomposeSpyTrackNode): DefaultMutableTreeNode {
@@ -135,5 +175,19 @@ class RecomposeSpyContent(val project: Project) {
     private fun DefaultMutableTreeNode.getTrackNode(): RecomposeSpyTrackNode? {
         val obj = userObject
         return if (obj is RecomposeSpyTrackNode) obj else null
+    }
+
+    private fun RecomposeSpyTrackNode.getRootNode(): RecomposeSpyTrackNode {
+        fun RecomposeSpyTrackNode.hasChildren(node: RecomposeSpyTrackNode): Boolean {
+            if (this == node || children.any {it == node}) {
+                return true
+            }
+            return children.any { child ->
+                child.hasChildren(node)
+            }
+        }
+        return models.first {
+            it.hasChildren(this)
+        }
     }
 }
