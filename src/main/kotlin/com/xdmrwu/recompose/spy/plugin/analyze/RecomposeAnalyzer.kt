@@ -22,8 +22,16 @@ fun RecomposeSpyTrackNode.recomposeReason(): String {
         inline && !isLambda -> reason.appendLine("此方法为 inline, 无法跳过重组")
         inline && isLambda -> reason.appendLine("此方法是 inline 方法的 Lambda 参数，且该参数没有被标记为 noinline, 无法跳过重组")
         // state or compositionLocal read
-        recomposeState.forceRecompose -> {
+        else -> {
+            // 如果当前 ComposeTree 里有其他 Compose 也读取了相同 state，那么第一个执行的会是 forceResompose，
+            // 其他的就不是 force 了，但是也会执行，所以都需要判断 param 和 state
+
+            // 检查参数参数变化
+            val changedParams = this@recomposeReason.changedParams()
+
+            // 检查 State 和 CompositionLocal 变化
             var changedStates = ""
+            // TODO 可能存在多个 node
             var node: RecomposeSpyTrackNode? = null
             traverseInlineChildren {
                 if (changedStates.isNotEmpty()) {
@@ -32,27 +40,43 @@ fun RecomposeSpyTrackNode.recomposeReason(): String {
                 changedStates = it.changedValueInfo(state = true, compositionLocal = true)
                 node = it
             }
-            if (changedStates.isEmpty()) {
-                reason.appendLine("此方法为本次重组的 Scope，但没有找到具体的 State 或 CompositionLocal 变化信息。")
-            } else if (node != null) {
-                reason.appendLine("此方法为本次重组的 Scope，因为某个 inline 子组件的以下状态或 CompositionLocal 发生了变化:")
-                reason.appendLine("子组件: ${node.getDisplayName()}")
-                reason.appendLine(changedStates)
-            } else {
-                reason.appendLine("此方法为本次重组的 Scope，因为以下 State 或 CompositionLocal 发生了变化:")
-                reason.appendLine(changedStates)
-            }
-        }
-        else -> {
-            // 检查参数参数变化
-            val changedInfo = changedParams()
-            if (changedInfo.isNotEmpty()) {
-                reason.appendLine("该 Composable 方法无法跳过重组，因为以下参数发生了变化:")
-                reason.appendLine(changedInfo)
-            } else {
-                reason.appendLine("该 Composable 方法无法跳过重组，但没有找到具体的变化信息。")
-            }
 
+            if (recomposeState.forceRecompose) {
+                when {
+                    changedParams.isEmpty() && changedStates.isEmpty() -> {
+                        reason.appendLine("此方法为本次重组的 Scope，但没有找到触发重组、State 或 CompositionLocal 变化信息。")
+                    }
+                    changedStates.isEmpty() -> {
+                        reason.appendLine("此方法为本次重组的 Scope，但没有找到触发重组、State 或 CompositionLocal 变化信息。有以下参数变化信息")
+                        reason.appendLine(changedParams)
+                    }
+                    node != this -> {
+                        reason.appendLine("此方法为本次重组的 Scope，因为某个 inline 子组件的 State 或 CompositionLocal 发生了变化而触发重组")
+                        reason.appendLine("子组件: ${node!!.getDisplayName()}")
+                        reason.appendLine(changedStates)
+                    }
+                    else -> {
+                        reason.appendLine("此方法为本次重组的 Scope，因为以下 State 或 CompositionLocal 发生了变化而触发重组")
+                        reason.appendLine(changedStates)
+                    }
+
+                }
+            } else {
+                when {
+                    changedParams.isEmpty() && changedStates.isEmpty() -> {
+                        reason.appendLine("该 Composable 方法无法跳过重组，但没有找到Param、State 或 CompositionLocal 变化信息。")
+                    }
+                    else -> {
+                        reason.appendLine("该 Composable 方法无法跳过重组，因为以下 State 或 CompositionLocal 发生了变化而触发重组")
+                        reason.appendLine(changedParams)
+                        if (node != this) {
+                            reason.appendLine("子组件: ${node!!.getDisplayName()}")
+                        }
+                        reason.appendLine(changedStates)
+                    }
+
+                }
+            }
         }
     }
     return reason.toString()
