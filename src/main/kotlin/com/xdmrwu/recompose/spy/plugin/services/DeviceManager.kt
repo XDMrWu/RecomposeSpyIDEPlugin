@@ -16,8 +16,8 @@ import kotlin.concurrent.thread
 class DeviceManager(val logger: Logger) {
 
     interface IDeviceInfoListener {
-        fun onDeviceConnected(device: IDevice)
-        fun onDeviceDisconnected(device: IDevice)
+        fun onDeviceConnected(device: DeviceWrapper)
+        fun onDeviceDisconnected(device: DeviceWrapper)
         fun onReceivedData(device: IDevice, data: String)
     }
 
@@ -46,7 +46,7 @@ class DeviceManager(val logger: Logger) {
             devices[device.serialNumber] = it
             it.connectSocket()
             listeners.forEach { listener ->
-                listener.onDeviceConnected(device) // 通知所有监听器
+                listener.onDeviceConnected(it) // 通知所有监听器
             }
         }
     }
@@ -56,10 +56,10 @@ class DeviceManager(val logger: Logger) {
         logger.info("Device disconnected: ${device.serialNumber}")
         // 关闭 Socket 服务器和相关线程
         devices[device.serialNumber]?.dispose()
-        devices.remove(device.serialNumber)
+        val wrapper = devices.remove(device.serialNumber) ?: return
         logger.info("Cleanup complete for device ${device.serialNumber}.")
         listeners.forEach { listener ->
-            listener.onDeviceDisconnected(device) // 通知所有监听器
+            listener.onDeviceDisconnected(wrapper) // 通知所有监听器
         }
     }
 
@@ -75,7 +75,7 @@ class DeviceManager(val logger: Logger) {
         devices.values.forEach {
             it.dispose()
             listeners.forEach { listener ->
-                listener.onDeviceDisconnected(it.device) // 通知所有监听器
+                listener.onDeviceDisconnected(it) // 通知所有监听器
             }
         }
         devices.clear()
@@ -85,7 +85,7 @@ class DeviceManager(val logger: Logger) {
 /**
  * 封装 IDevice，处理 app 侧端口的更新逻辑以及 Socket 连接管理
  */
-private class DeviceWrapper(val device: IDevice, val logger: Logger, val onReceivedData: (String, String) -> Unit) {
+class DeviceWrapper(val device: IDevice, val logger: Logger, val onReceivedData: (String, String) -> Unit) {
     companion object {
         private const val APP_PORT = 50000 // App 端口
     }
@@ -100,8 +100,6 @@ private class DeviceWrapper(val device: IDevice, val logger: Logger, val onRecei
         if (socketThread != null) {
             return
         }
-        // 设置端口转发
-        device.createReverse(APP_PORT, localPort)
         logger.info("Port reverse set up for ${device.serialNumber}: host:$localPort -> device:$APP_PORT")
         socketThread = thread(name = "SocketListener-${device.serialNumber}") {
             runCatching {
@@ -133,6 +131,15 @@ private class DeviceWrapper(val device: IDevice, val logger: Logger, val onRecei
                 serverSocket.close()
             }
             logger.info("Server socket closed for device ${device.serialNumber}")
+        }
+    }
+
+    fun updateStatus(isRecording: Boolean) {
+        if (isRecording) {
+            // 设置端口转发
+            device.createReverse(APP_PORT, localPort)
+        } else {
+            device.removeReverse(APP_PORT)
         }
     }
 

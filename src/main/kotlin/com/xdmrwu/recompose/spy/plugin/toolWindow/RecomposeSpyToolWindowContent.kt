@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTabbedPane
 import com.xdmrwu.recompose.spy.plugin.services.AdbConnectionService
 import com.xdmrwu.recompose.spy.plugin.services.DeviceManager
+import com.xdmrwu.recompose.spy.plugin.services.DeviceWrapper
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Font
@@ -67,10 +68,11 @@ class RecomposeSpyToolWindowContent(private val service: AdbConnectionService, p
     init {
         contentPanel.add(emptyPanel, BorderLayout.CENTER)
         service.addDeviceInfoListener(object : DeviceManager.IDeviceInfoListener {
-            override fun onDeviceConnected(device: IDevice) {
+            override fun onDeviceConnected(deviceWrapper: DeviceWrapper) {
+                val device = deviceWrapper.device
                 SwingUtilities.invokeLater {
                     if (!deviceComponents.containsKey(device.serialNumber)) {
-                        val content = RecomposeSpyContent(project)
+                        val content = RecomposeSpyContent(project, deviceWrapper)
                         deviceComponents[device.serialNumber] = content
                         val tabTitle = ellipsizeTabTitle(device)
                         tabbedPane.addTab(tabTitle, content.getContent())
@@ -85,7 +87,8 @@ class RecomposeSpyToolWindowContent(private val service: AdbConnectionService, p
                 }
             }
 
-            override fun onDeviceDisconnected(device: IDevice) {
+            override fun onDeviceDisconnected(deviceWrapper: DeviceWrapper) {
+                val device = deviceWrapper.device
                 SwingUtilities.invokeLater {
                     val tabTitle = ellipsizeTabTitle(device)
                     deviceComponents.remove(device.serialNumber)

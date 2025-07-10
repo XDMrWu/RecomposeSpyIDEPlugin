@@ -1,5 +1,6 @@
 package com.xdmrwu.recompose.spy.plugin.toolWindow.ui
 
+import com.xdmrwu.recompose.spy.plugin.services.DeviceWrapper
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics
@@ -15,7 +16,7 @@ import javax.swing.JButton
  * @Date: 2025/7/6 14:51
  * @Description:
  */
-class TopRecordPanel(onUpdate: (Boolean) -> Unit): JButton() {
+class TopRecordPanel(val device: DeviceWrapper, onUpdate: (Boolean) -> Unit): JButton() {
 
     var isRecording = false
 
@@ -32,6 +33,7 @@ class TopRecordPanel(onUpdate: (Boolean) -> Unit): JButton() {
                 addActionListener {
                     isRecording = !isRecording
                     updateToolTip()
+                    device.updateStatus(isRecording)
                     onUpdate(isRecording)
                 }
             }

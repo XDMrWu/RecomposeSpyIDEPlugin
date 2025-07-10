@@ -2,6 +2,7 @@ package com.xdmrwu.recompose.spy.plugin.toolWindow
 
 import com.intellij.openapi.project.Project
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
+import com.xdmrwu.recompose.spy.plugin.services.DeviceWrapper
 import com.xdmrwu.recompose.spy.plugin.toolWindow.ui.RecomposeTreePanel
 import com.xdmrwu.recompose.spy.plugin.toolWindow.ui.TopRecordPanel
 import com.xdmrwu.recompose.spy.plugin.toolWindow.ui.TraceNodeDetailPanel
@@ -21,7 +22,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI
  * @Date: 2025/7/3 23:31
  * @Description:
  */
-class RecomposeSpyContent(val project: Project) {
+class RecomposeSpyContent(val project: Project, val device: DeviceWrapper) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -43,7 +44,7 @@ class RecomposeSpyContent(val project: Project) {
     }
 
     // 顶部监听按钮
-    private val topRecordPanel = TopRecordPanel { isRecording ->
+    private val topRecordPanel = TopRecordPanel(device) { isRecording ->
         if (isRecording) {
             models.clear()
             recomposeTreePanel.updateTree()
