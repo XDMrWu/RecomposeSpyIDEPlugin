@@ -2,7 +2,6 @@ package com.xdmrwu.recompose.spy.plugin.toolWindow.ui
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
-import com.xdmrwu.recompose.spy.plugin.analyze.RecomposeAnalyzer
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
 import java.awt.BorderLayout
 import java.awt.Font
@@ -88,7 +87,7 @@ class TraceNodeDetailPanel(
     }
 
     private fun updateReasonArea(rootNode: RecomposeSpyTrackNode, selectedNode: RecomposeSpyTrackNode) {
-        reasonArea.text = RecomposeAnalyzer.analyzeRecomposeReason(rootNode, selectedNode)
+        reasonArea.text = selectedNode.recomposeReason
     }
 
     private fun updateTableData(rootNode: RecomposeSpyTrackNode, selectedNode: RecomposeSpyTrackNode) {
