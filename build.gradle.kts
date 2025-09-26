@@ -2,6 +2,7 @@
 plugins {
     id("java") // Java support
     alias(libs.plugins.kotlin) // Kotlin support
+    alias(libs.plugins.multiplatform).apply(false) // Kotlin support
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.intelliJPlatform) // IntelliJ Platform Gradle Plugin
 }
@@ -17,6 +18,7 @@ kotlin {
 // Configure project's dependencies
 repositories {
     mavenCentral()
+    google()
 
     // IntelliJ Platform Gradle Plugin Repositories Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-repositories-extension.html
     intellijPlatform {
@@ -27,6 +29,7 @@ repositories {
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
     implementation(libs.kotlinx.serialization.json)
+    implementation(project(":ui"))
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
 //        create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
