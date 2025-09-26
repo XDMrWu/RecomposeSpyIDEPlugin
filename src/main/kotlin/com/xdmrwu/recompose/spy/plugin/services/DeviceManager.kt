@@ -134,13 +134,15 @@ class DeviceWrapper(val device: IDevice, val logger: Logger, val onReceivedData:
         }
     }
 
-    fun updateStatus(isRecording: Boolean) {
-        if (isRecording) {
-            // 设置端口转发
-            device.createReverse(APP_PORT, localPort)
-        } else {
-            device.removeReverse(APP_PORT)
-        }
+    fun updateStatus(isRecording: Boolean): Boolean {
+        return runCatching {
+            if (isRecording) {
+                // 设置端口转发
+                device.createReverse(APP_PORT, localPort)
+            } else {
+                device.removeReverse(APP_PORT)
+            }
+        }.isSuccess
     }
 
     fun dispose() {

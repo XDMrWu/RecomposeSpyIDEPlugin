@@ -87,3 +87,18 @@ intellijPlatformTesting {
         }
     }
 }
+
+tasks.register("compose-resource-copy") {
+    group = "Help"
+    description = "Print the plugin version used in the build"
+    val kotlinCompileTask = tasks.named("compileKotlin").get()
+    kotlinCompileTask.dependsOn(this)
+    doLast {
+        val drawableDir = rootProject.file("src/main/resources/composeResources/com.xdmrwu.recompose.spy.plugin.generated/drawable")
+        drawableDir.deleteRecursively()
+        drawableDir.mkdirs()
+
+        val originDrawableDir = rootProject.file("ui/src/commonMain/composeResources/drawable")
+        originDrawableDir.copyRecursively(drawableDir, true)
+    }
+}

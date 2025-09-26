@@ -21,15 +21,19 @@ class RecomposeSpyTrackNode(
     val children: MutableList<RecomposeSpyTrackNode> = mutableListOf(),
     var recomposeState: RecomposeState
 ) {
-    fun getDisplayName(): String {
+    fun getDisplayName(withLines: Boolean = true): String {
         // 只保留一个匿名标识
         val hasAnonymous = fqName.contains("<anonymous>")
         val functionName = fqName.replace(".<anonymous>", "").split(".").last()
-        return if (hasAnonymous) {
-            "$functionName.<anonymous>[$startLine:$endLine]"
+        var result =  if (hasAnonymous) {
+            "$functionName.<anonymous>"
         } else {
-            "$functionName[$startLine:$endLine]"
+            "$functionName"
         }
+        if (withLines) {
+            result = "$result[$startLine:$endLine]"
+        }
+        return result
     }
 }
 
