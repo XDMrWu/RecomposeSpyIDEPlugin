@@ -23,6 +23,7 @@ import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
 import java.awt.Color
 
 /**
@@ -57,30 +58,13 @@ class RecomposeTreePanel(val models: MutableList<RecomposeSpyTrackNode>,
                     val filePath = node.file
                     val line = node.startLine
                     if (!filePath.isNullOrBlank() && line != null) {
-                        val vf = LocalFileSystem.getInstance().findFileByPath(filePath) ?: return
-                        OpenFileDescriptor(project, vf, line - 1, 0).navigate(true)
-                        highlightRecomposeCode(project, node.startOffset, node.endOffset)
+                        openFileAndHighlight(project, filePath, line - 1, node.startOffset, node.endOffset)
                     }
                     e.consume()
                 }
             }
         })
         tree.setToggleClickCount(0) // 禁止通过双击展开/收起
-    }
-
-    private fun highlightRecomposeCode(project: Project, startOffset: Int, endOffset: Int) {
-        val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
-
-        val color = Color(102, 187, 255, 120)
-        val attrs = TextAttributes(null, color, null, null, Font.PLAIN)
-        val markup = editor.markupModel
-        val highlighter = markup.addRangeHighlighter(
-            startOffset, endOffset, HighlighterLayer.SELECTION - 1, attrs, HighlighterTargetArea.EXACT_RANGE
-        )
-        // 高亮 700 ms 后自动消失
-        Timer(700) {
-            markup.removeHighlighter(highlighter)
-        }.start()
     }
 
     fun updateTree() {

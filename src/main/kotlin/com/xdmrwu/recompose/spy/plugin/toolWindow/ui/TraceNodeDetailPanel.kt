@@ -2,10 +2,15 @@ package com.xdmrwu.recompose.spy.plugin.toolWindow.ui
 
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.util.queryParameters
+import com.xdmrwu.recompose.spy.plugin.analyze.recomposeReason
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
+import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
 import java.awt.BorderLayout
 import java.awt.Font
+import java.net.URI
 import javax.swing.*
+import javax.swing.event.HyperlinkEvent
 import javax.swing.table.DefaultTableModel
 
 /**
@@ -38,11 +43,27 @@ class TraceNodeDetailPanel(
     }
     private val tablePanel = JBScrollPane(table)
 
-    private val reasonArea = JTextArea().apply {
+    private val reasonArea = JTextPane().apply {
+        contentType = "text/html"
+        // 让 HTML 使用组件字体
+        putClientProperty(JTextPane.HONOR_DISPLAY_PROPERTIES, true)
         font = Font("JetBrains Mono", Font.PLAIN, 16)
         isEditable = false
-        lineWrap = true
-        wrapStyleWord = true
+        addHyperlinkListener { e ->
+            if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                // 处理链接点击事件
+                val uri = runCatching { e.url?.toURI() ?: URI(e.description) }.getOrNull() ?: return@addHyperlinkListener
+                if (uri.scheme == "action" && uri.host == "state") {
+                    val index = uri.queryParameters.get("index")?.toInt() ?: return@addHyperlinkListener
+                    val state = selectedNode?.recomposeState?.readStates?.getOrNull(index) ?: return@addHyperlinkListener
+                    // 在这里处理点击的 State，可能是打开相关文件或跳转到相关位置
+                    openFileAndHighlight(project, state.file, state.startLine, state.startOffset, state.endOffset)
+                }
+            }
+        }
+        addHyperlinkListener {
+
+        }
     }
     private val reasonScrollPane = JBScrollPane(reasonArea)
 
@@ -87,7 +108,7 @@ class TraceNodeDetailPanel(
     }
 
     private fun updateReasonArea(rootNode: RecomposeSpyTrackNode, selectedNode: RecomposeSpyTrackNode) {
-        reasonArea.text = selectedNode.recomposeReason
+        reasonArea.text = selectedNode.recomposeReason()
     }
 
     private fun updateTableData(rootNode: RecomposeSpyTrackNode, selectedNode: RecomposeSpyTrackNode) {

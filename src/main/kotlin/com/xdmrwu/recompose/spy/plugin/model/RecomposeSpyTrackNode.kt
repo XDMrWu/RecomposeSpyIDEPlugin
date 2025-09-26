@@ -36,7 +36,6 @@ class RecomposeSpyTrackNode(
 @Serializable
 data class RecomposeState(val paramStates: List<RecomposeParamState>,
                           val readStates: List<RecomposeReadState>,
-                          val readCompositionLocals: List<RecomposeReadState>,
                           val forceRecompose: Boolean = false)
 
 @Serializable
@@ -51,8 +50,11 @@ data class RecomposeParamState(
 
 @Serializable
 data class RecomposeReadState(
-    val name: String,
-    val oldValue: String?,
-    val newValue: String?,
-    val changed: Boolean
+    val file: String,
+    val propertyName: String,
+    val startLine: Int,
+    val endLine: Int,
+    val startOffset: Int,
+    val endOffset: Int,
+    val stackTrace: List<String>
 )
