@@ -67,6 +67,7 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
                 uiState.selectedDevice?.recompositionList?.add(model.toRecomposition())
             }
         })
+        service.connectToAdb()
     }
 
     private fun updateDarkMode() {

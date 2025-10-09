@@ -10,8 +10,10 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow
-            factoryClass="com.xdmrwu.recompose.spy.plugin.toolWindow.RecomposeSpyToolWindow" id="RecomposeSpyToolWindow"
+            id="RecomposeSpyToolWindow"
+            factoryClass="com.xdmrwu.recompose.spy.plugin.toolWindow.RecomposeSpyToolWindow"
             icon="/icons/icon.svg"
+            anchor="bottom"
         />
     </extensions>
 

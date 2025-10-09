@@ -4,6 +4,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -23,13 +26,21 @@ import androidx.compose.material.Button
 import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.min
 import com.xdmrwu.recompose.spy.plugin.ui.ext.ComposePanel
 import com.xdmrwu.recompose.spy.plugin.ui.state.UiState
 import org.jetbrains.compose.resources.painterResource
@@ -37,6 +48,7 @@ import com.xdmrwu.recompose.spy.plugin.generated.Res
 import com.xdmrwu.recompose.spy.plugin.generated.phone_dark
 import com.xdmrwu.recompose.spy.plugin.generated.phone_light
 import com.xdmrwu.recompose.spy.plugin.ui.state.Recomposition
+import java.awt.Cursor
 
 /**
  * @Author: wulinpeng
@@ -69,31 +81,46 @@ internal fun WindowToolPanelUI(
 ) {
     BoxWithConstraints {
         val colors = state.colors
+        val width = max(maxWidth, 1000.dp)
+        val height = max(maxHeight, 600.dp)
+        val density = LocalDensity.current
         Column(
             Modifier
-                .width(max(maxWidth, 10000.dp))
-                .height(max(maxHeight, 600.dp))
+                .width(width)
+                .height(height)
                 .background(colors.backgroundColor)
         ) {
             TitleBar(state, onSelectDevice, onClickRecord)
             Divider(color = colors.dividerColor, modifier = Modifier.height(2.dp).fillMaxWidth())
+            var leftBoxWidth by remember { mutableStateOf(width / 4f) }
             Row(
                 Modifier.weight(1f)
                     .fillMaxWidth()
             ) {
                 Box(
                     Modifier
-                        .weight(1f)
+                        .width(leftBoxWidth)
                         .fillMaxHeight()
                 ) {
                     RecomposeStackUI(state, openFile)
                 }
 
-                Divider(color = colors.dividerColor, modifier = Modifier.fillMaxHeight().width(2.dp))
+                Divider(
+                    color = colors.dividerColor,
+                    modifier = Modifier.fillMaxHeight()
+                        .width(4.dp)
+                        .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR)))
+                        .draggable(
+                            state = rememberDraggableState {
+                                leftBoxWidth += with(density) {it.toDp() }
+                            },
+                            orientation = Orientation.Horizontal
+                        )
+                )
 
                 Box(
                     Modifier
-                        .weight(3f)
+                        .weight(1f)
                         .fillMaxHeight()
                 ) {
                     AnalyzeUI(state)
