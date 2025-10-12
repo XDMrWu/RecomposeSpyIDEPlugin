@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 
 /**
  * @Author: wulinpeng
@@ -35,7 +36,8 @@ class Recomposition(
     val endLine: Int,
     val startOffset: Int,
     val endOffset: Int,
-    val reason: String,
+    val recomposeReason: List<AnnotatedContent>,
+    val nonSkipReason: List<AnnotatedContent>,
     val changedParams: List<String>,
     val changedStates: List<String>
 ) {
@@ -45,3 +47,6 @@ class Recomposition(
         return "${file.split("/").last()}:$startLine"
     }
 }
+
+@Stable
+data class AnnotatedContent(val content: String, val onClick: (() -> Unit)? = null)

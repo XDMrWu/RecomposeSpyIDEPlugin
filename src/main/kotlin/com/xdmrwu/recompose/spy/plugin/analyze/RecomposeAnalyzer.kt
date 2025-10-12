@@ -1,6 +1,10 @@
 package com.xdmrwu.recompose.spy.plugin.analyze
 
+import androidx.compose.ui.graphics.Color
+import com.intellij.openapi.project.Project
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
+import com.xdmrwu.recompose.spy.plugin.ui.state.AnnotatedContent
+import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
 
 
 /**
@@ -9,57 +13,68 @@ import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
  * @Description:
  */
 
-fun RecomposeSpyTrackNode.recomposeReason(): String {
+fun RecomposeSpyTrackNode.recomposeReason(project: Project, parentNodes: List<RecomposeSpyTrackNode>): List<AnnotatedContent> {
 
-    val reason = StringBuilder()
-    when {
-        nonSkippable -> reason.appendLine("此方法被标记为 @NonSkippableComposable, 无法跳过重组")
-        hasReturnType -> reason.appendLine("此方法有返回值, 无法跳过重组")
-        inline && !isLambda -> reason.appendLine("此方法为 inline, 无法跳过重组")
-        inline && isLambda -> reason.appendLine("此方法是 inline 方法的 Lambda 参数，且该参数没有被标记为 noinline, 无法跳过重组")
-        // state or compositionLocal read
-        else -> {
-            // 如果当前 ComposeTree 里有其他 Compose 也读取了相同 state，那么第一个执行的会是 forceResompose，
-            // 其他的就不是 force 了，但是也会执行，所以都需要判断 param 和 state
+    val result = mutableListOf<AnnotatedContent>()
 
-            // 检查参数参数变化
-            val changedParams = changedParams()
-            val changedStates = changedStatesInfo()
-
-            if (recomposeState.forceRecompose || changedStates.isNotEmpty()) {
-                when {
-                    changedParams.isEmpty() && changedStates.isEmpty() -> {
-                        reason.appendLine("此方法为本次重组的 Scope，但没有找到触发重组、State 或 CompositionLocal 变化信息。")
-                    }
-                    else -> {
-                        reason.appendLine("此方法为本次重组的 Scope，因为以下 State 或 CompositionLocal 发生了变化而触发重组")
-                        reason.appendLine(changedParams)
-                        reason.appendLine(changedStates)
-                    }
-
+    // TODO 通过 remember 支持判断是否第一次重组
+    if (!recomposeState.forceRecompose && recomposeState.readStates.isEmpty()) {
+        if (parentNodes.isNotEmpty()) {
+            result.appendLine("本次重组由父级 Composable 触发，")
+        } else {
+            // TODO subcompose
+            result.appendLine("未找到相关信息")
+        }
+    } else if (recomposeState.readStates.isEmpty()) {
+        // TODO subcompose
+        result.appendLine("未找到相关信息")
+    } else if (recomposeState.readStates.any { it.currentComposableRead }) {
+        result.appendLine("本次重组由以下 State 或 CompositionLocal 变化触发")
+        recomposeState.readStates.filter {
+            it.currentComposableRead
+        }.forEach { readState ->
+            // TODO index
+            result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
+        }
+    } else {
+        // TODO 不一定是 child，也可能是 parent inline，自己也是 inline 的场景
+        result.appendLine("本次重组由以下 State 或 CompositionLocal 变化触发")
+        recomposeState.readStates.forEach { readState ->
+            var childNode: RecomposeSpyTrackNode? = null
+            traverseNoRecomposeScopeChildren {
+                if (childNode == null && it.recomposeState.readStates.contains(readState)) {
+                    childNode = it
                 }
+            }
+            if (childNode != null) {
+                // TODO 更多信息
+                result.appendLine("${childNode.getDisplayName(true)} -> ${readState.file}: ${readState.startLine}")
             } else {
-                when {
-                    changedParams.isEmpty() && changedStates.isEmpty() -> {
-                        reason.appendLine("该 Composable 方法无法跳过重组，但没有找到Param、State 或 CompositionLocal 变化信息。")
-                    }
-                    else -> {
-                        reason.appendLine("该 Composable 方法无法跳过重组，因为以下 State 或 CompositionLocal 发生了变化而触发重组")
-                        reason.appendLine(changedParams)
-                        reason.appendLine(changedStates)
-                    }
-
-                }
+                result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
             }
         }
     }
-    return """
-            <html>
-              <body style="font-family: 'JetBrains Mono'; font-size: 14px;">
-                $reason
-              </body>
-            </html>
-    """.trimIndent()
+    return result
+}
+
+fun RecomposeSpyTrackNode.nonSkipReason(): List<AnnotatedContent> {
+    val reason = StringBuilder()
+    when {
+        compositionCount == 1 -> reason.appendLine("此方法首次进入组合，无法跳过")
+        nonSkippable -> reason.appendLine("此方法被标记为 @NonSkippableComposable, 无法跳过重组")
+        nonRestartable -> reason.appendLine("此方法被标记为 @NonRestartableComposable, 无法跳过重组")
+        hasReturnType -> reason.appendLine("此方法有返回值, 无法跳过重组")
+        inline && !isLambda -> reason.appendLine("此方法为 inline, 无法跳过重组")
+        inline && isLambda -> reason.appendLine("此方法是 inline 方法的 Lambda 参数，且该参数没有被标记为 noinline, 无法跳过重组")
+        recomposeState.forceRecompose || recomposeState.readStates.any { it.currentComposableRead }
+                    -> reason.appendLine("此方法为本次的重组作用域，因此无法跳过重组，具体触发重组原因请参考上方信息")
+        recomposeState.paramStates.any { it.changed } -> {
+            reason.appendLine("此方法的参数发生了变化，无法跳过重组，具体变化参数请参考下方信息")
+            reason.appendLine(changedParams())
+        }
+        else -> reason.appendLine("未找到相关信息")
+    }
+    return listOf(AnnotatedContent(reason.toString()))
 }
 
 fun RecomposeSpyTrackNode.changedParams(): String {
@@ -76,28 +91,33 @@ fun RecomposeSpyTrackNode.changedParams(): String {
     return changedInfo.toString()
 }
 
-fun RecomposeSpyTrackNode.changedStatesInfo(): String {
-    if (recomposeState.readStates.isEmpty()) {
-        return ""
-    }
-    val changedInfo = StringBuilder()
-
-    changedInfo.appendLine("Changed States:")
-    recomposeState.readStates.forEachIndexed { index, state ->
-        changedInfo.appendLine("  - <a href=\"action://state?index=$index\">${state.file.split("/").last()}#${state.propertyName}</a>")
-    }
-
-    return changedInfo.toString()
-}
-
-fun RecomposeSpyTrackNode.traverseInlineChildren(
+fun RecomposeSpyTrackNode.traverseNoRecomposeScopeChildren(
     action: (RecomposeSpyTrackNode) -> Unit
 ) {
     action(this)
     children.filter {
-        it.inline
+        !it.canRestart()
     }.forEach {
         action(it)
-        it.traverseInlineChildren(action)
+        it.traverseNoRecomposeScopeChildren(action)
     }
+}
+
+fun RecomposeSpyTrackNode.canRestart(): Boolean {
+    return !inline && !hasReturnType && !nonRestartable
+}
+
+fun MutableList<AnnotatedContent>.appendLine(line: String) {
+    add(AnnotatedContent("$line\n"))
+}
+
+fun MutableList<AnnotatedContent>.jumpFile(project: Project, content: String, file: String, startLine: Int, startOffset: Int, endOffset: Int) {
+    add(
+        AnnotatedContent(
+            content,
+            {
+                openFileAndHighlight(project, file, startLine, startOffset, endOffset)
+            }
+        )
+    )
 }

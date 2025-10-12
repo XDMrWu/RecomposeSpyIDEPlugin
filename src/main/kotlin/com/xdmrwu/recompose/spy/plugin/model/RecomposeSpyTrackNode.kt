@@ -18,6 +18,7 @@ class RecomposeSpyTrackNode(
     val nonSkippable: Boolean = false,
     val nonRestartable: Boolean = false,
     var recomposeReason: String = "",
+    var compositionCount: Int = 0,
     val children: MutableList<RecomposeSpyTrackNode> = mutableListOf(),
     var recomposeState: RecomposeState
 ) {
@@ -60,5 +61,18 @@ data class RecomposeReadState(
     val endLine: Int,
     val startOffset: Int,
     val endOffset: Int,
+    var currentComposableRead: Boolean,
     val stackTrace: List<String>
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (other !is RecomposeReadState) return false
+        if (this === other) return true
+        return this.file == other.file &&
+                this.propertyName == other.propertyName &&
+                this.startLine == other.startLine &&
+                this.endLine == other.endLine &&
+                this.startOffset == other.startOffset &&
+                this.endOffset == other.endOffset &&
+                this.stackTrace == other.stackTrace
+    }
+}

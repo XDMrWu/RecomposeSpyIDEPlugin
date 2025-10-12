@@ -3,7 +3,8 @@ package com.xdmrwu.recompose.spy.plugin.toolWindow
 import com.android.ddmlib.IDevice
 import com.intellij.ide.ui.LafManager
 import com.intellij.openapi.project.Project
-import com.intellij.util.ui.UIUtil
+import com.xdmrwu.recompose.spy.plugin.analyze.nonSkipReason
+import com.xdmrwu.recompose.spy.plugin.analyze.recomposeReason
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
 import com.xdmrwu.recompose.spy.plugin.services.AdbConnectionService
 import com.xdmrwu.recompose.spy.plugin.services.DeviceManager
@@ -64,7 +65,7 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
                     return
                 }
                 val model = json.decodeFromString(RecomposeSpyTrackNode.serializer(), data)
-                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition())
+                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project, mutableListOf()))
             }
         })
         service.connectToAdb()
@@ -117,7 +118,7 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
 
 }
 
-fun RecomposeSpyTrackNode.toRecomposition(): Recomposition {
+fun RecomposeSpyTrackNode.toRecomposition(project: Project, parentNodes: MutableList<RecomposeSpyTrackNode>): Recomposition {
     val recomposition = Recomposition(
         name = getDisplayName(false),
         file = file,
@@ -125,10 +126,13 @@ fun RecomposeSpyTrackNode.toRecomposition(): Recomposition {
         endLine = endLine,
         startOffset = startOffset,
         endOffset = endOffset,
-        reason = recomposeReason,
+        recomposeReason = recomposeReason(project, parentNodes),
+        nonSkipReason = nonSkipReason(),
         changedParams = recomposeState.paramStates.filter { it.changed }.map { it.name },
         changedStates = recomposeState.readStates.map { it.propertyName }
     )
-    recomposition.children.addAll(children.map { it.toRecomposition() })
+    parentNodes.add(this)
+    recomposition.children.addAll(children.map { it.toRecomposition(project, parentNodes) })
+    parentNodes.remove(this)
     return recomposition
 }
