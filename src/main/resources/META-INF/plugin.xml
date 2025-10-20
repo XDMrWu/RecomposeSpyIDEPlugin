@@ -33,4 +33,10 @@
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </group>
     </actions>
+
+    <applicationListeners>
+        <listener class="com.xdmrwu.recompose.spy.plugin.toolWindow.ThemeChangeListener"
+            topic="com.intellij.ide.ui.UISettingsListener" />
+    </applicationListeners>
+
 </idea-plugin>

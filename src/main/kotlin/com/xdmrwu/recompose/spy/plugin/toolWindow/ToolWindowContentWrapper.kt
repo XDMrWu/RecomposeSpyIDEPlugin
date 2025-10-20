@@ -29,6 +29,9 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
     private val deviceMap = mutableMapOf<String, DeviceWrapper>()
 
     init {
+        onThemeChange = {
+            updateDarkMode()
+        }
         updateDarkMode()
         toolWindowPanel.onClickRecord = ::onClickRecord
         toolWindowPanel.onSelectDevice = ::onSelectDevice
