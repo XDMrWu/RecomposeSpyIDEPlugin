@@ -134,6 +134,7 @@ fun RecomposeSpyTrackNode.toRecomposition(project: Project): Recomposition {
         endLine = endLine,
         startOffset = startOffset,
         endOffset = endOffset,
+        cost = endTimestamp - startTimestamp,
         recomposeReason = recomposeReason(project),
         nonSkipReason = nonSkipReason(),
         changedParams = recomposeState.paramStates.filter { it.changed }.map { it.name },

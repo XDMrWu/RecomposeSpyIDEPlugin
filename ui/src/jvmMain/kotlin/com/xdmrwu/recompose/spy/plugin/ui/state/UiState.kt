@@ -36,6 +36,7 @@ class Recomposition(
     val endLine: Int,
     val startOffset: Int,
     val endOffset: Int,
+    val cost: Long,
     val recomposeReason: List<AnnotatedContent>,
     val nonSkipReason: List<AnnotatedContent>,
     val changedParams: List<String>,

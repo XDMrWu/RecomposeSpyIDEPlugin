@@ -92,7 +92,7 @@ internal fun WindowToolPanelUI(
         ) {
             TitleBar(state, onSelectDevice, onClickRecord)
             Divider(color = colors.dividerColor, modifier = Modifier.height(2.dp).fillMaxWidth())
-            var leftBoxWidth by remember { mutableStateOf(width / 4f) }
+            var leftBoxWidth by remember { mutableStateOf(width / 3f) }
             Row(
                 Modifier.weight(1f)
                     .fillMaxWidth()

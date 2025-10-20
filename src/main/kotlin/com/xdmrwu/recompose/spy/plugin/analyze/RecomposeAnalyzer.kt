@@ -39,7 +39,8 @@ fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedConte
         var triggerByParent = false
         recomposeState.readStates.forEachIndexed { index, readState ->
             if (readState.currentComposableRead) {
-                result.appendLine("重组原因 ${index + 1}: 由以下 State 或 CompositionLocal 变化触发")
+                result.appendLine("• 重组原因 ${index + 1}: 由以下 State 或 CompositionLocal 变化触发")
+                result.append("    - ")
                 result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
                 result.appendLine("")
             } else {
@@ -54,7 +55,7 @@ fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedConte
                 if (parentNode != null) {
                     if (!triggerByParent) {
                         // 去重
-                        result.appendLine("重组原因 ${index + 1}: 由父级 Composable 触发")
+                        result.appendLine("• 重组原因 ${index + 1}: 由父级 Composable 触发")
                         triggerByParent = true
                     }
                     return@forEachIndexed
@@ -70,10 +71,12 @@ fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedConte
                 }
                 if (childNode != null) {
                     // TODO 更多信息
-                    result.appendLine("重组原因 ${index + 1}: 由不可重启的子 Composable 触发：")
-                    result.jumpFile(project, "子 Composable", childNode.file, childNode.startLine, childNode.startOffset, childNode.endOffset)
+                    result.appendLine("• 重组原因 ${index + 1}: 由不可重启的子 Composable 触发：")
+                    result.append("    - 子 ")
+                    result.jumpFile(project, "Composable", childNode.file, childNode.startLine, childNode.startOffset, childNode.endOffset)
                     result.appendLine("")
-                    result.jumpFile(project, "读取的 State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
+                    result.append("    - 读取的 ")
+                    result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
                     result.appendLine("")
                 }
             }
@@ -140,6 +143,10 @@ fun RecomposeSpyTrackNode.traverseNoRecomposeScopeParent(
 
 fun RecomposeSpyTrackNode.canRestart(): Boolean {
     return !inline && !hasReturnType && !nonRestartable
+}
+
+fun MutableList<AnnotatedContent>.append(line: String) {
+    add(AnnotatedContent(line))
 }
 
 fun MutableList<AnnotatedContent>.appendLine(line: String) {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
@@ -41,7 +42,7 @@ fun AnalyzeUI(state: UiState) {
     ) {
         if (state.selectedDevice?.currentRecomposition != null) {
             RecomposeReasonUI(state)
-            Divider(Modifier.padding(vertical = 15.dp), Color.Transparent)
+            Divider(Modifier.height(10.dp), Color.Transparent)
             NonSkipReasonUI(state)
         }
     }

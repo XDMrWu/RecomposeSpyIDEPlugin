@@ -146,6 +146,14 @@ private fun RecomposeStackItem(
                 fontSize = 13.sp,
                 modifier = Modifier.padding(horizontal = 5.dp)
             )
+            Divider(Modifier.weight(1f), color = Color.Transparent)
+            Text(
+                "${recomposition.cost} ms",
+                color = colors.textSecondaryColor,
+                maxLines = 1,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(horizontal = 5.dp)
+            )
         }
         if (recomposition.children.isNotEmpty() && expanded) {
             recomposition.children.forEach {

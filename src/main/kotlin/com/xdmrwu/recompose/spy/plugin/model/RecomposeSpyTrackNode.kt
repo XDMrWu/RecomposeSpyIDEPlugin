@@ -18,8 +18,10 @@ class RecomposeSpyTrackNode(
     val hasReturnType: Boolean = false, // 有返回值的Composable 不会是 restartable，也不会 skip
     val nonSkippable: Boolean = false,
     val nonRestartable: Boolean = false,
-    var recomposeReason: String = "",
     var compositionCount: Int = 0,
+    var recomposeReason: String = "",
+    var startTimestamp: Long = 0L,
+    var endTimestamp: Long = 0L,
     val children: MutableList<RecomposeSpyTrackNode> = mutableListOf(),
     var recomposeState: RecomposeState
 ) {
