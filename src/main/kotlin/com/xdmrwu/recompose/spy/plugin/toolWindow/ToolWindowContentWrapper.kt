@@ -1,8 +1,11 @@
 package com.xdmrwu.recompose.spy.plugin.toolWindow
 
 import com.android.ddmlib.IDevice
+import com.intellij.execution.impl.ConsoleViewImpl
+import com.intellij.execution.ui.ConsoleViewContentType
 import com.intellij.ide.ui.LafManager
 import com.intellij.openapi.project.Project
+import com.intellij.psi.search.GlobalSearchScope
 import com.xdmrwu.recompose.spy.plugin.analyze.nonSkipReason
 import com.xdmrwu.recompose.spy.plugin.analyze.recomposeReason
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
@@ -12,9 +15,12 @@ import com.xdmrwu.recompose.spy.plugin.services.DeviceWrapper
 import com.xdmrwu.recompose.spy.plugin.ui.WindowToolPanel
 import com.xdmrwu.recompose.spy.plugin.ui.state.DeviceState
 import com.xdmrwu.recompose.spy.plugin.ui.state.Recomposition
+import com.xdmrwu.recompose.spy.plugin.ui.state.StackTraceComponent
+import com.xdmrwu.recompose.spy.plugin.ui.state.UiState
 import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
 import com.xdmrwu.recompose.spy.plugin.utils.showNotify
 import kotlinx.serialization.json.Json
+import org.jetbrains.kotlin.idea.debugger.core.KotlinExceptionFilterFactory
 
 /**
  * @Author: wulinpeng
@@ -33,6 +39,7 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
             updateDarkMode()
         }
         updateDarkMode()
+        uiState.stackTraceComponent = createStackTraceComponent(project)
         toolWindowPanel.onClickRecord = ::onClickRecord
         toolWindowPanel.onSelectDevice = ::onSelectDevice
         toolWindowPanel.openFile = ::openFile
@@ -69,10 +76,27 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
                 }
                 val model = json.decodeFromString(RecomposeSpyTrackNode.serializer(), data)
                 model.fillParent()
-                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project))
+                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project, uiState))
             }
         })
         service.connectToAdb()
+    }
+
+    private fun createStackTraceComponent(project: Project): StackTraceComponent {
+        val consoleView = ConsoleViewImpl(project, true)
+
+        // 注册异常过滤器（支持源码跳转）
+        val exceptionFilter = KotlinExceptionFilterFactory().create(project, GlobalSearchScope.allScope(project))
+        consoleView.addMessageFilter(exceptionFilter)
+
+        return object : StackTraceComponent {
+            override val component = consoleView.component
+
+            override fun print(stackTrace: List<String>) {
+                consoleView.clear()
+                consoleView.print(stackTrace.joinToString("\n"), ConsoleViewContentType.ERROR_OUTPUT)
+            }
+        }
     }
 
     private fun updateDarkMode() {
@@ -93,6 +117,7 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
         uiState.selectedDevice?.recording = !recording
         if (!recording) {
             uiState.selectedDevice?.recompositionList?.clear()
+            uiState.selectedDevice?.currentRecomposition = null
         }
     }
 
@@ -113,6 +138,7 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
         uiState.deviceList.firstOrNull { it.id == id }?.apply {
             recording = false
             recompositionList.clear()
+            currentRecomposition = null
         }
     }
 
@@ -129,7 +155,7 @@ private fun RecomposeSpyTrackNode.fillParent() {
     }
 }
 
-fun RecomposeSpyTrackNode.toRecomposition(project: Project): Recomposition {
+fun RecomposeSpyTrackNode.toRecomposition(project: Project, uiState: UiState): Recomposition {
     val recomposition = Recomposition(
         name = getDisplayName(false),
         file = file,
@@ -138,11 +164,11 @@ fun RecomposeSpyTrackNode.toRecomposition(project: Project): Recomposition {
         startOffset = startOffset,
         endOffset = endOffset,
         cost = endTimestamp - startTimestamp,
-        recomposeReason = recomposeReason(project),
+        recomposeReason = recomposeReason(project, uiState),
         nonSkipReason = nonSkipReason(),
         changedParams = recomposeState.paramStates.filter { it.changed }.map { it.name },
         changedStates = recomposeState.readStates.map { it.propertyName }
     )
-    recomposition.children.addAll(children.map { it.toRecomposition(project) })
+    recomposition.children.addAll(children.map { it.toRecomposition(project, uiState) })
     return recomposition
 }

@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeState
 import com.xdmrwu.recompose.spy.plugin.ui.state.AnnotatedContent
+import com.xdmrwu.recompose.spy.plugin.ui.state.UiState
 import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
 
 
@@ -14,7 +15,7 @@ import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
  * @Description:
  */
 
-fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedContent> {
+fun RecomposeSpyTrackNode.recomposeReason(project: Project, uiState: UiState): List<AnnotatedContent> {
 
     val result = mutableListOf<AnnotatedContent>()
 
@@ -42,6 +43,10 @@ fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedConte
                 result.appendLine("• 重组原因 ${index + 1}: 由以下 State 或 CompositionLocal 变化触发")
                 result.append("    - ")
                 result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
+                result.append(", ")
+                if (readState.stackTrace.isNotEmpty()) {
+                    result.showStackTrace("查看读取堆栈", uiState, readState.stackTrace)
+                }
                 result.appendLine("")
             } else {
                 // 先判断是否 inline parent 触发（共享 recompose scope)
@@ -77,6 +82,10 @@ fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedConte
                     result.appendLine("")
                     result.append("    - 读取的 ")
                     result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
+                    result.append(", ")
+                    if (readState.stackTrace.isNotEmpty()) {
+                        result.showStackTrace("查看读取堆栈", uiState, readState.stackTrace)
+                    }
                     result.appendLine("")
                 }
             }
@@ -159,6 +168,17 @@ fun MutableList<AnnotatedContent>.jumpFile(project: Project, content: String, fi
             content,
             {
                 openFileAndHighlight(project, file, startLine, startOffset, endOffset)
+            }
+        )
+    )
+}
+
+fun MutableList<AnnotatedContent>.showStackTrace(content: String, uiState: UiState, stackTrace: List<String>) {
+    add(
+        AnnotatedContent(
+            content,
+            {
+                uiState.selectedDevice?.currentRecomposition?.currentStackTrace = stackTrace
             }
         )
     )

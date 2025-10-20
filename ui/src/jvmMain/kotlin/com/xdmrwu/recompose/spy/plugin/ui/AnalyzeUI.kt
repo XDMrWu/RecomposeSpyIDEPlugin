@@ -1,11 +1,14 @@
 package com.xdmrwu.recompose.spy.plugin.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
@@ -13,7 +16,10 @@ import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -34,13 +40,17 @@ import com.xdmrwu.recompose.spy.plugin.ui.state.UiState
 
 @Composable
 fun AnalyzeUI(state: UiState) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(10.dp)
-    ) {
-        if (state.selectedDevice?.currentRecomposition != null) {
+    if (!state.selectedDevice?.currentRecomposition?.currentStackTrace.isNullOrEmpty() && state.stackTraceComponent != null) {
+        // 展示 StackTrace
+        StackTraceUI(state)
+    } else {
+        // 展示分析结果
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(10.dp)
+        ) {
             RecomposeReasonUI(state)
             Divider(Modifier.height(10.dp), Color.Transparent)
             NonSkipReasonUI(state)
@@ -49,10 +59,54 @@ fun AnalyzeUI(state: UiState) {
 }
 
 @Composable
+private fun StackTraceUI(state: UiState) {
+    val colors = state.colors
+    val stackTrace = state.selectedDevice?.currentRecomposition?.currentStackTrace ?: return
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(10.dp)
+            .background(colors.backgroundSecondaryColor)
+    ) {
+        BackArrowIcon(
+            colors.textSecondaryColor,
+            Modifier.size(18.dp)
+                .clickable {
+                    state.selectedDevice?.currentRecomposition?.currentStackTrace = null
+                }
+        )
+        SwingPanel(
+            background = colors.backgroundSecondaryColor,
+            factory = {
+                state.stackTraceComponent!!.component
+            },
+            update = {
+                state.stackTraceComponent!!.print(stackTrace)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(10.dp)
+        )
+    }
+}
+
+@Composable
+private fun BackArrowIcon(color: Color, modifier: Modifier) {
+    Canvas(modifier) {
+        val path = Path().apply {
+            moveTo(size.width * 0.7f, size.height * 0.1f)
+            lineTo(size.width * 0.3f, size.height * 0.5f)
+            lineTo(size.width * 0.7f, size.height * 0.9f)
+        }
+        drawPath(path, color, style = Stroke(width = 2.dp.toPx()))
+    }
+}
+
+@Composable
 private fun RecomposeReasonUI(state: UiState) {
     val colors = state.colors
-    val rootComposition = state.selectedDevice?.currentRecomposition?.first ?: return
-    val composition = state.selectedDevice?.currentRecomposition?.second ?: return
+    val composition = state.selectedDevice?.currentRecomposition ?: return
     Column (
         Modifier
             .fillMaxWidth()
@@ -84,8 +138,7 @@ private fun RecomposeReasonUI(state: UiState) {
 @Composable
 private fun NonSkipReasonUI(state: UiState) {
     val colors = state.colors
-    val rootComposition = state.selectedDevice?.currentRecomposition?.first ?: return
-    val composition = state.selectedDevice?.currentRecomposition?.second ?: return
+    val composition = state.selectedDevice?.currentRecomposition ?: return
     Column (
         Modifier
             .fillMaxWidth()

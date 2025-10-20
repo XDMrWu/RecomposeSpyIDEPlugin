@@ -107,7 +107,7 @@ private fun RecomposeStackItem(
                         openFile(recomposition)
                     },
                     onClick = {
-                        state.selectedDevice?.currentRecomposition = root to recomposition
+                        state.selectedDevice?.currentRecomposition = recomposition
                     }
                 )
 //                .padding(horizontal = 10.dp, vertical = 15.dp)
