@@ -1,6 +1,7 @@
 package com.xdmrwu.recompose.spy.plugin.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 class RecomposeSpyTrackNode(
@@ -22,6 +23,9 @@ class RecomposeSpyTrackNode(
     val children: MutableList<RecomposeSpyTrackNode> = mutableListOf(),
     var recomposeState: RecomposeState
 ) {
+    @Transient
+    var parent: RecomposeSpyTrackNode? = null
+
     fun getDisplayName(withLines: Boolean = true): String {
         // 只保留一个匿名标识
         val hasAnonymous = fqName.contains("<anonymous>")

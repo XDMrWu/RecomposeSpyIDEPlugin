@@ -65,7 +65,8 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
                     return
                 }
                 val model = json.decodeFromString(RecomposeSpyTrackNode.serializer(), data)
-                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project, mutableListOf()))
+                model.fillParent()
+                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project))
             }
         })
         service.connectToAdb()
@@ -118,7 +119,14 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
 
 }
 
-fun RecomposeSpyTrackNode.toRecomposition(project: Project, parentNodes: MutableList<RecomposeSpyTrackNode>): Recomposition {
+private fun RecomposeSpyTrackNode.fillParent() {
+    children.forEach {
+        it.parent = this
+        it.fillParent()
+    }
+}
+
+fun RecomposeSpyTrackNode.toRecomposition(project: Project): Recomposition {
     val recomposition = Recomposition(
         name = getDisplayName(false),
         file = file,
@@ -126,13 +134,11 @@ fun RecomposeSpyTrackNode.toRecomposition(project: Project, parentNodes: Mutable
         endLine = endLine,
         startOffset = startOffset,
         endOffset = endOffset,
-        recomposeReason = recomposeReason(project, parentNodes),
+        recomposeReason = recomposeReason(project),
         nonSkipReason = nonSkipReason(),
         changedParams = recomposeState.paramStates.filter { it.changed }.map { it.name },
         changedStates = recomposeState.readStates.map { it.propertyName }
     )
-    parentNodes.add(this)
-    recomposition.children.addAll(children.map { it.toRecomposition(project, parentNodes) })
-    parentNodes.remove(this)
+    recomposition.children.addAll(children.map { it.toRecomposition(project) })
     return recomposition
 }

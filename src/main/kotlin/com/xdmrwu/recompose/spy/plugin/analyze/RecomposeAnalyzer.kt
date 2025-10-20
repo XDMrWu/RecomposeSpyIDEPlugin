@@ -3,6 +3,7 @@ package com.xdmrwu.recompose.spy.plugin.analyze
 import androidx.compose.ui.graphics.Color
 import com.intellij.openapi.project.Project
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
+import com.xdmrwu.recompose.spy.plugin.model.RecomposeState
 import com.xdmrwu.recompose.spy.plugin.ui.state.AnnotatedContent
 import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
 
@@ -13,45 +14,65 @@ import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
  * @Description:
  */
 
-fun RecomposeSpyTrackNode.recomposeReason(project: Project, parentNodes: List<RecomposeSpyTrackNode>): List<AnnotatedContent> {
+fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedContent> {
 
     val result = mutableListOf<AnnotatedContent>()
 
-    // TODO 通过 remember 支持判断是否第一次重组
     if (!recomposeState.forceRecompose && recomposeState.readStates.isEmpty()) {
-        if (parentNodes.isNotEmpty()) {
-            result.appendLine("本次重组由父级 Composable 触发，")
-        } else {
+        if (parent != null) {
+            result.appendLine("本次重组由父级 Composable 触发")
+        } else if (compositionCount == 1) {
+            result.appendLine("Compose 首次组合")
+        } else  {
             // TODO subcompose
             result.appendLine("未找到相关信息")
         }
     } else if (recomposeState.readStates.isEmpty()) {
-        // TODO subcompose
-        result.appendLine("未找到相关信息")
-    } else if (recomposeState.readStates.any { it.currentComposableRead }) {
-        result.appendLine("本次重组由以下 State 或 CompositionLocal 变化触发")
-        recomposeState.readStates.filter {
-            it.currentComposableRead
-        }.forEach { readState ->
-            // TODO index
-            result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
+        if (isLambda) {
+            // TODO 更详细的信息
+            result.appendLine("可能是由于 Composable Lambda的 Scope 被 invalide 导致重组")
+        } else {
+            // TODO subcompose
+            result.appendLine("未找到相关信息")
         }
     } else {
-        // TODO 不一定是 child，也可能是 parent inline，自己也是 inline 的场景
-        result.appendLine("本次重组由以下 State 或 CompositionLocal 变化触发")
-        recomposeState.readStates.forEach { readState ->
-            var childNode: RecomposeSpyTrackNode? = null
-            traverseNoRecomposeScopeChildren {
-                if (childNode == null && it.recomposeState.readStates.contains(readState)) {
-                    childNode = it
+        recomposeState.readStates.forEachIndexed { index, readState ->
+            if (readState.currentComposableRead) {
+                result.appendLine("重组原因 ${index + 1}: 由以下 State 或 CompositionLocal 变化触发")
+                result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
+                result.appendLine("")
+            } else {
+                // 先判断是否 inline parent 触发（共享 recompose scope)
+                var parentNode: RecomposeSpyTrackNode? = null
+                traverseNoRecomposeScopeParent {
+                    if (parentNode == null
+                        && it.recomposeState.readStates.any { state -> state == readState}) {
+                        parentNode = it
+                    }
+                }
+                if (parentNode != null) {
+                    result.appendLine("重组原因 ${index + 1}: 由父级 Composable 触发")
+                    return@forEachIndexed
+                }
+
+                // 再判断 inline child
+                var childNode: RecomposeSpyTrackNode? = null
+                traverseNoRecomposeScopeChildren {
+                    if (childNode == null
+                        && it.recomposeState.readStates.any { state -> state == readState && state.currentComposableRead}) {
+                        childNode = it
+                    }
+                }
+                if (childNode != null) {
+                    // TODO 更多信息
+                    result.appendLine("重组原因 ${index + 1}: 由不可重启的子 Composable 触发：")
+                    result.jumpFile(project, "子 Composable", childNode.file, childNode.startLine, childNode.startOffset, childNode.endOffset)
+                    result.appendLine("")
+                    result.jumpFile(project, "读取的 State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
+                    result.appendLine("")
                 }
             }
-            if (childNode != null) {
-                // TODO 更多信息
-                result.appendLine("${childNode.getDisplayName(true)} -> ${readState.file}: ${readState.startLine}")
-            } else {
-                result.jumpFile(project, "State", readState.file, readState.startLine, readState.startOffset, readState.endOffset)
-            }
+
         }
     }
     return result
@@ -100,6 +121,15 @@ fun RecomposeSpyTrackNode.traverseNoRecomposeScopeChildren(
     }.forEach {
         action(it)
         it.traverseNoRecomposeScopeChildren(action)
+    }
+}
+
+fun RecomposeSpyTrackNode.traverseNoRecomposeScopeParent(
+    action: (RecomposeSpyTrackNode) -> Unit
+) {
+    if (parent != null && !parent!!.canRestart()) {
+        action(parent!!)
+        parent!!.traverseNoRecomposeScopeParent(action)
     }
 }
 

@@ -92,7 +92,7 @@ private fun NonSkipReasonUI(state: UiState) {
             .padding(10.dp)
     ) {
         Text(
-            "Recompose Reason",
+            "Non Skip Reason",
             color = colors.textColor,
             fontSize = 18.sp,
             modifier = Modifier.padding(bottom = 10.dp)

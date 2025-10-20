@@ -18,7 +18,7 @@ import javax.swing.Timer
  */
 fun openFileAndHighlight(project: Project, filePath: String, startLine: Int, startOffset: Int, endOffset: Int) {
     val vf = LocalFileSystem.getInstance().findFileByPath(filePath) ?: return
-    OpenFileDescriptor(project, vf, startLine, 0).navigate(true)
+    OpenFileDescriptor(project, vf, startLine - 1, 0).navigate(true)
     highlightCode(project, startOffset, endOffset)
 }
 
