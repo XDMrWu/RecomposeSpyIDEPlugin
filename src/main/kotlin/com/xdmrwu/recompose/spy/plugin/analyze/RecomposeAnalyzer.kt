@@ -36,6 +36,7 @@ fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedConte
             result.appendLine("未找到相关信息")
         }
     } else {
+        var triggerByParent = false
         recomposeState.readStates.forEachIndexed { index, readState ->
             if (readState.currentComposableRead) {
                 result.appendLine("重组原因 ${index + 1}: 由以下 State 或 CompositionLocal 变化触发")
@@ -51,7 +52,11 @@ fun RecomposeSpyTrackNode.recomposeReason(project: Project): List<AnnotatedConte
                     }
                 }
                 if (parentNode != null) {
-                    result.appendLine("重组原因 ${index + 1}: 由父级 Composable 触发")
+                    if (!triggerByParent) {
+                        // 去重
+                        result.appendLine("重组原因 ${index + 1}: 由父级 Composable 触发")
+                        triggerByParent = true
+                    }
                     return@forEachIndexed
                 }
 
@@ -90,7 +95,7 @@ fun RecomposeSpyTrackNode.nonSkipReason(): List<AnnotatedContent> {
         recomposeState.forceRecompose || recomposeState.readStates.any { it.currentComposableRead }
                     -> reason.appendLine("此方法为本次的重组作用域，因此无法跳过重组，具体触发重组原因请参考上方信息")
         recomposeState.paramStates.any { it.changed } -> {
-            reason.appendLine("此方法的参数发生了变化，无法跳过重组，具体变化参数请参考下方信息")
+            reason.appendLine("此方法的下列参数发生变化，因此无法跳过重组")
             reason.appendLine(changedParams())
         }
         else -> reason.appendLine("未找到相关信息")
@@ -105,7 +110,7 @@ fun RecomposeSpyTrackNode.changedParams(): String {
 
     if (changedParams.isNotEmpty()) {
         changedParams.forEach { param ->
-            changedInfo.appendLine("  - ${param.name}: used=${param.used}, static=${param.static}, uncertain=${param.uncertain}, useDefaultValue=${param.useDefaultValue}")
+            changedInfo.appendLine(" - ${param.name}")
         }
     }
 
