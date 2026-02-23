@@ -1,3 +1,4 @@
+import java.util.Properties
 
 plugins {
     id("java") // Java support
@@ -5,6 +6,20 @@ plugins {
     alias(libs.plugins.multiplatform).apply(false) // Kotlin support
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.intelliJPlatform) // IntelliJ Platform Gradle Plugin
+    alias(libs.plugins.config)
+}
+
+buildConfig {
+    packageName("com.xdmrwu.recompose.spy.plugin")
+
+    val localProperties = Properties().apply {
+        val file = rootProject.file("local.properties")
+        if (file.exists()) {
+            file.inputStream().use { load(it) }
+        }
+    }
+
+    buildConfigField("String", "DEEPSEEK_API_KEY", "\"${localProperties.getProperty("DEEPSEEK_API_KEY")}\"")
 }
 
 group = providers.gradleProperty("pluginGroup").get()
@@ -28,6 +43,7 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
+    implementation(libs.koog.agents)
     implementation(libs.kotlinx.serialization.json)
     implementation(project(":ui"))
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html

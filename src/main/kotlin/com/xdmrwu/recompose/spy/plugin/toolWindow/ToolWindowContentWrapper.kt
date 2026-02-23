@@ -6,6 +6,7 @@ import com.intellij.execution.ui.ConsoleViewContentType
 import com.intellij.ide.ui.LafManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
+import com.xdmrwu.recompose.spy.plugin.analyze.ai.analyzeWithAI
 import com.xdmrwu.recompose.spy.plugin.analyze.nonSkipReason
 import com.xdmrwu.recompose.spy.plugin.analyze.recomposeReason
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
@@ -76,7 +77,9 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
                 }
                 val model = json.decodeFromString(RecomposeSpyTrackNode.serializer(), data)
                 model.fillParent()
-                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project, uiState))
+                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project, uiState).also {
+                    it.aiAnalyzeFlow = model.analyzeWithAI()
+                })
             }
         })
         service.connectToAdb()

@@ -75,6 +75,8 @@ fun TitleBar(
         DeviceUI(state, onSelectDevice)
         Divider(Modifier.width(10.dp))
         RecordButton(state, onClickRecord)
+        Divider(Modifier.width(10.dp))
+        AIAnalyzeButton(state)
     }
 }
 
@@ -215,6 +217,27 @@ private fun RecordButton(state: UiState, onClickRecord: () -> Unit) {
         }
         Divider(Modifier.width(5.dp))
         Text(text,
+            color = colors.textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun AIAnalyzeButton(state: UiState) {
+    val colors = state.colors
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clickable {
+                state.selectedDevice?.showAIAnalyze = true
+            }
+            .background(colors.buttonBackgroundColor, RoundedCornerShape(4.dp))
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(
+            text = "Analyze with AI",
             color = colors.textColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

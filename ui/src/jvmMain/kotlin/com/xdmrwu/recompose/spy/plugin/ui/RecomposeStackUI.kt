@@ -107,6 +107,7 @@ private fun RecomposeStackItem(
                         openFile(recomposition)
                     },
                     onClick = {
+                        state.selectedDevice?.showAIAnalyze = false
                         state.selectedDevice?.currentRecomposition = recomposition
                     }
                 )

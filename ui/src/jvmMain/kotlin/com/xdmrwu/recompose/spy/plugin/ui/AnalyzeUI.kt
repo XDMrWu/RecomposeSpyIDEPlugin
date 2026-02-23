@@ -15,6 +15,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.graphics.Color
@@ -40,7 +43,9 @@ import com.xdmrwu.recompose.spy.plugin.ui.state.UiState
 
 @Composable
 fun AnalyzeUI(state: UiState) {
-    if (!state.selectedDevice?.currentRecomposition?.currentStackTrace.isNullOrEmpty() && state.stackTraceComponent != null) {
+    if (state.selectedDevice?.showAIAnalyze == true) {
+        AIAnalyzeUI(state)
+    } else if (!state.selectedDevice?.currentRecomposition?.currentStackTrace.isNullOrEmpty() && state.stackTraceComponent != null) {
         // 展示 StackTrace
         StackTraceUI(state)
     } else {
@@ -55,6 +60,33 @@ fun AnalyzeUI(state: UiState) {
             Divider(Modifier.height(10.dp), Color.Transparent)
             NonSkipReasonUI(state)
         }
+    }
+}
+
+@Composable
+private fun AIAnalyzeUI(state: UiState) {
+    val colors = state.colors
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(10.dp)
+            .verticalScroll(rememberScrollState())
+            .background(colors.backgroundSecondaryColor)
+    ) {
+        BackArrowIcon(
+            colors.textSecondaryColor,
+            Modifier.size(18.dp)
+                .clickable {
+                    state.selectedDevice?.showAIAnalyze = false
+                }
+        )
+        val content by state.selectedDevice?.recompositionList?.first()?.aiAnalyzeFlow?.collectAsState("") ?: mutableStateOf("Error")
+        Text(
+            text = content,
+            color = colors.textColor,
+            fontSize = 18.sp,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 

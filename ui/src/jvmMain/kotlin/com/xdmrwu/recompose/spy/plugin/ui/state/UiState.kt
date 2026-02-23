@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.flow.Flow
 import java.awt.Component
 
 /**
@@ -28,6 +29,8 @@ class DeviceState(val id: String, val name: String) {
     var recording by mutableStateOf(false)
     var recompositionList = mutableStateListOf<Recomposition>()
     var currentRecomposition by mutableStateOf<Recomposition?>(null)
+
+    var showAIAnalyze by mutableStateOf(false)
 }
 
 interface StackTraceComponent {
@@ -51,6 +54,8 @@ class Recomposition(
 ) {
     val children = mutableStateListOf<Recomposition>()
     var currentStackTrace by mutableStateOf<List<String>?>(null)
+
+    var aiAnalyzeFlow: Flow<String>? = null
 
     fun getFileWithLines(): String {
         return "${file.split("/").last()}:$startLine"

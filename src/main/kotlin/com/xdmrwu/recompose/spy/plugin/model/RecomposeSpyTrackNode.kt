@@ -67,8 +67,8 @@ data class RecomposeReadState(
     val endLine: Int,
     val startOffset: Int,
     val endOffset: Int,
-    var currentComposableRead: Boolean,
-    val stackTrace: List<String>
+    val stackTrace: List<String>,
+    var currentComposableRead: Boolean = false
 ) {
     override fun equals(other: Any?): Boolean {
         if (other !is RecomposeReadState) return false
