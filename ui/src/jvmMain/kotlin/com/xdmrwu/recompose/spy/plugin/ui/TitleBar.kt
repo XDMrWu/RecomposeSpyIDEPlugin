@@ -37,7 +37,6 @@ import com.xdmrwu.recompose.spy.plugin.generated.phone_dark
 import com.xdmrwu.recompose.spy.plugin.generated.phone_light
 import com.xdmrwu.recompose.spy.plugin.ui.state.UiState
 import org.jetbrains.compose.resources.painterResource
-import kotlin.math.exp
 
 /**
  * @Author: wulinpeng
@@ -49,6 +48,7 @@ import kotlin.math.exp
 fun TitleBar(
     state: UiState,
     onSelectDevice: (String) -> Unit = {},
+    onAIAnalyze: () -> Unit = {},
     onClickRecord: () -> Unit = {}
 ) {
     val colors = state.colors
@@ -76,7 +76,7 @@ fun TitleBar(
         Divider(Modifier.width(10.dp))
         RecordButton(state, onClickRecord)
         Divider(Modifier.width(10.dp))
-        AIAnalyzeButton(state)
+        AIAnalyzeButton(state, onAIAnalyze)
     }
 }
 
@@ -225,13 +225,13 @@ private fun RecordButton(state: UiState, onClickRecord: () -> Unit) {
 }
 
 @Composable
-private fun AIAnalyzeButton(state: UiState) {
+private fun AIAnalyzeButton(state: UiState, onAIAnalyze: () -> Unit) {
     val colors = state.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clickable {
-                state.selectedDevice?.showAIAnalyze = true
+                onAIAnalyze()
             }
             .background(colors.buttonBackgroundColor, RoundedCornerShape(4.dp))
             .padding(horizontal = 10.dp, vertical = 5.dp)

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.compose)
 }
 repositories {
@@ -20,6 +21,7 @@ kotlin {
 
         commonMain.dependencies {
             implementation(compose.components.resources)
+            implementation(libs.kotlinx.serialization.json)
         }
 
         jvmMain.dependencies {

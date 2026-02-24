@@ -7,6 +7,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.readText
 import java.awt.Color
 import java.awt.Font
 import javax.swing.Timer
@@ -35,4 +36,9 @@ private fun highlightCode(project: Project, startOffset: Int, endOffset: Int) {
     Timer(700) {
         markup.removeHighlighter(highlighter)
     }.start()
+}
+
+fun getFileContent(filePath: String): String? {
+    val vf = LocalFileSystem.getInstance().findFileByPath(filePath) ?: return null
+    return vf.readText()
 }

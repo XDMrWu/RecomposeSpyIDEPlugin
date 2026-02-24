@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
 import kotlinx.coroutines.flow.Flow
 import java.awt.Component
 
@@ -31,6 +32,7 @@ class DeviceState(val id: String, val name: String) {
     var currentRecomposition by mutableStateOf<Recomposition?>(null)
 
     var showAIAnalyze by mutableStateOf(false)
+    var aiAnalyzeResult by mutableStateOf<String?>("Loading")
 }
 
 interface StackTraceComponent {
@@ -50,12 +52,11 @@ class Recomposition(
     val recomposeReason: List<AnnotatedContent>,
     val nonSkipReason: List<AnnotatedContent>,
     val changedParams: List<String>,
-    val changedStates: List<String>
+    val changedStates: List<String>,
+    val trackNode: RecomposeSpyTrackNode
 ) {
     val children = mutableStateListOf<Recomposition>()
     var currentStackTrace by mutableStateOf<List<String>?>(null)
-
-    var aiAnalyzeFlow: Flow<String>? = null
 
     fun getFileWithLines(): String {
         return "${file.split("/").last()}:$startLine"

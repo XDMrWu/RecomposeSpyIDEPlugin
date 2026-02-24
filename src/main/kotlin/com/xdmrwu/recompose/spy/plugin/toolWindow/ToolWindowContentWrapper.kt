@@ -7,6 +7,7 @@ import com.intellij.ide.ui.LafManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
 import com.xdmrwu.recompose.spy.plugin.analyze.ai.analyzeWithAI
+import com.xdmrwu.recompose.spy.plugin.analyze.ai.analyzeWithAIStreaming
 import com.xdmrwu.recompose.spy.plugin.analyze.nonSkipReason
 import com.xdmrwu.recompose.spy.plugin.analyze.recomposeReason
 import com.xdmrwu.recompose.spy.plugin.model.RecomposeSpyTrackNode
@@ -20,19 +21,28 @@ import com.xdmrwu.recompose.spy.plugin.ui.state.StackTraceComponent
 import com.xdmrwu.recompose.spy.plugin.ui.state.UiState
 import com.xdmrwu.recompose.spy.plugin.utils.openFileAndHighlight
 import com.xdmrwu.recompose.spy.plugin.utils.showNotify
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.jetbrains.kotlin.idea.debugger.core.KotlinExceptionFilterFactory
+import kotlin.coroutines.CoroutineContext
 
 /**
  * @Author: wulinpeng
  * @Date: 2025/9/26 13:29
  * @Description:
  */
-class ToolWindowContentWrapper(val service: AdbConnectionService, val project: Project) {
-    private val toolWindowPanel = WindowToolPanel()
+class ToolWindowContentWrapper(val service: AdbConnectionService, val project: Project): CoroutineScope {
+    override val coroutineContext: CoroutineContext = CoroutineExceptionHandler { context, throwable ->
+        println("Coroutine Exception: $throwable")
+    }
 
+    private val toolWindowPanel = WindowToolPanel()
     private val json = Json { ignoreUnknownKeys = true }
     private val uiState = toolWindowPanel.state
+
     private val deviceMap = mutableMapOf<String, DeviceWrapper>()
 
     init {
@@ -43,6 +53,7 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
         uiState.stackTraceComponent = createStackTraceComponent(project)
         toolWindowPanel.onClickRecord = ::onClickRecord
         toolWindowPanel.onSelectDevice = ::onSelectDevice
+        toolWindowPanel.onAIAnalyze = ::onAIAnalyze
         toolWindowPanel.openFile = ::openFile
         // TODO dark mode change listener
         service.addDeviceInfoListener(object : DeviceManager.IDeviceInfoListener {
@@ -77,9 +88,7 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
                 }
                 val model = json.decodeFromString(RecomposeSpyTrackNode.serializer(), data)
                 model.fillParent()
-                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project, uiState).also {
-                    it.aiAnalyzeFlow = model.analyzeWithAI()
-                })
+                uiState.selectedDevice?.recompositionList?.add(model.toRecomposition(project, uiState))
             }
         })
         service.connectToAdb()
@@ -136,6 +145,16 @@ class ToolWindowContentWrapper(val service: AdbConnectionService, val project: P
         uiState.selectedDevice = uiState.deviceList.firstOrNull { it.id == deviceId }
     }
 
+    fun onAIAnalyze() {
+        uiState.selectedDevice?.apply {
+            showAIAnalyze = true
+            aiAnalyzeResult = "Loading"
+            launch {
+                aiAnalyzeResult = recompositionList.map { it.trackNode }.analyzeWithAI()
+            }
+        }
+    }
+
     private fun resetDevice(id: String) {
         deviceMap[id]?.updateStatus(false)
         uiState.deviceList.firstOrNull { it.id == id }?.apply {
@@ -170,7 +189,8 @@ fun RecomposeSpyTrackNode.toRecomposition(project: Project, uiState: UiState): R
         recomposeReason = recomposeReason(project, uiState),
         nonSkipReason = nonSkipReason(),
         changedParams = recomposeState.paramStates.filter { it.changed }.map { it.name },
-        changedStates = recomposeState.readStates.map { it.propertyName }
+        changedStates = recomposeState.readStates.map { it.propertyName },
+        this
     )
     recomposition.children.addAll(children.map { it.toRecomposition(project, uiState) })
     return recomposition

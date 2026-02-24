@@ -15,9 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.graphics.Color
@@ -80,9 +77,8 @@ private fun AIAnalyzeUI(state: UiState) {
                     state.selectedDevice?.showAIAnalyze = false
                 }
         )
-        val content by state.selectedDevice?.recompositionList?.first()?.aiAnalyzeFlow?.collectAsState("") ?: mutableStateOf("Error")
         Text(
-            text = content,
+            text = state.selectedDevice?.aiAnalyzeResult ?: "Error",
             color = colors.textColor,
             fontSize = 18.sp,
             modifier = Modifier.fillMaxWidth()

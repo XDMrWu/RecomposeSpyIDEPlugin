@@ -59,6 +59,7 @@ class WindowToolPanel {
 
     val state = UiState()
     var onSelectDevice: (String) -> Unit = {}
+    var onAIAnalyze: () -> Unit = {}
     var onClickRecord: () -> Unit = {}
     var openFile: (Recomposition) -> Unit = {}
 
@@ -68,7 +69,7 @@ class WindowToolPanel {
     }
 
     fun getPanel() = ComposePanel {
-        WindowToolPanelUI(state, onSelectDevice, onClickRecord, openFile)
+        WindowToolPanelUI(state, onSelectDevice, onAIAnalyze, onClickRecord, openFile)
     }
 }
 
@@ -76,6 +77,7 @@ class WindowToolPanel {
 internal fun WindowToolPanelUI(
     state: UiState,
     onSelectDevice: (String) -> Unit = {},
+    onAIAnalyze: () -> Unit = {},
     onClickRecord: () -> Unit = {},
     openFile: (Recomposition) -> Unit = {}
 ) {
@@ -90,7 +92,7 @@ internal fun WindowToolPanelUI(
                 .height(height)
                 .background(colors.backgroundColor)
         ) {
-            TitleBar(state, onSelectDevice, onClickRecord)
+            TitleBar(state, onSelectDevice, onAIAnalyze, onClickRecord)
             Divider(color = colors.dividerColor, modifier = Modifier.height(2.dp).fillMaxWidth())
             var leftBoxWidth by remember { mutableStateOf(width / 3f) }
             Row(

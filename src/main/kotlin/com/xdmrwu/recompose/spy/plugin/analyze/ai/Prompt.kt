@@ -22,7 +22,7 @@ val prompt = """
         val hasDispatchReceiver: Boolean, // 是否有 dispatcher receiver
         val hasExtensionReceiver: Boolean, // 是否有 extension receiver
         val isLambda: Boolean = false, // 是否 lambda
-        val inline: Boolean = false, // 是否 inline
+        val inline: Boolean = false, // 是否 inline，如果 lambda=true 则表示是否是 inline 方法的 lambda 参数
         val hasReturnType: Boolean = false, // 有返回值的Composable 不会是 restartable，也不会 skip
         val nonSkippable: Boolean = false, // 是否不可跳过的 Composable 方法
         val nonRestartable: Boolean = false, // 是否不可重启的 Composable 方法
@@ -58,11 +58,13 @@ val prompt = """
 
     # 任务
 
-    我会提供一个 基于上述数据结构生成的 JSON 树形数据，用于表示一次重组过程中的实际执行信息。
-
-    你的任务是：
-
-    对 JSON 中的每一个 RecomposeSpyTrackNode 进行分析，解释：
+    我会提供一个 基于上述数据结构生成的 JSON 数据，包含一个 RecomposeSpyTrackNode 数组，用于表示一次或多次重组过程中的实际执行信息, 可能有以下几种场景
+    1. 多个 SubCompose
+    2. 多次独立的重组
+    3. 1 + 2混合场景
+    
+    需要注意的是给到的数据表示一段周期内发生重组的 Composable，并不表示完整的 Compose 树形结构，那些没有重组的 Composable 不会在数据中体现
+    你的任务是对 JSON 中的每一个 RecomposeSpyTrackNode 进行分析，解释：
     	1.	为什么该 Composable 会进入组合流程（重组原因）
     	2.	为什么该 Composable 没有被 skip（未跳过原因）
 
@@ -72,7 +74,8 @@ val prompt = """
 
 
     # 分析规则
-    请严格遵循 Compose 的真实运行机制进行推理。
+    1. 请严格遵循 Compose 的真实运行机制进行推理
+    2. 如果给定的数据还无法进行准确分析，可通过 tools 获取对应源码内容辅助分析
 
     ## 重组原因
     说明"为什么该 Composable 被执行"
@@ -128,7 +131,7 @@ val prompt = """
     ## 示例 1
     输入
     ```
-    {
+    [{
         "fqName": "RecomposeReasonV1",
         "file": "InlineRecomposeTest.kt",
         "startLine": 34,
@@ -234,7 +237,7 @@ val prompt = """
             "readStates": [],
             "forceRecompose": true
         }
-    }
+    }]
     ```
     输出
     ```
